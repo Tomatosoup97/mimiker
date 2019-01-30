@@ -7,16 +7,17 @@
 
 extern uint8_t __malta_dtb_start[];
 
-void generic_hinted_child(device_t *bus, const void *fdt, int nodeoffset) {
+static void generic_hinted_child(device_t *bus, const void *fdt, int nodeoffset) {
     int proplen;
     char child_path[PATHBUF_LEN];
     char child_path_as_device[PATHBUF_LEN];
     const fdt_property_t *prop_ptr;
     // TODO: find driver here?
-    driver_t *driver = NULL;
+    // driver_t *driver = NULL;
     // TODO: name, unit will be assigned by devclass
-    device_t *child = make_device(bus, driver, "name", 0x42);
-    device_construct_fullpath(child, child_path_as_device, PATHBUF_LEN);
+    // TODO: get or create device
+    // device_t *child = make_device(bus, driver);
+    // device_construct_fullpath(child, child_path_as_device, PATHBUF_LEN);
 
     klog("child path as device: %s", child_path_as_device);
 
@@ -60,6 +61,6 @@ void bus_enumerate_hinted_children(device_t *bus) {
     int child_nodeoffset;
 
     FDT_FOR_EACH_SUBNODE(child_nodeoffset, fdt, bus_nodeoffset) {
-        bus_hinted_child(bus, fdt, child_nodeoffset);
+        generic_hinted_child(bus, fdt, child_nodeoffset);
     }
 }
