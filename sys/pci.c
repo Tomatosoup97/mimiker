@@ -50,52 +50,34 @@ void pci_bus_enumerate(device_t *pcib) {
       dev->instance = pcid;
 
       // TODO: pcid->addr = (pci_addr_t){0, j, k};
-      devprop_attr_val_t *deviceid =
-        kmalloc(M_DEV, sizeof(devprop_attr_val_t), 0);
-      devprop_attr_val_t *vendorid =
-        kmalloc(M_DEV, sizeof(devprop_attr_val_t), 0);
-      devprop_attr_val_t *classcode =
-        kmalloc(M_DEV, sizeof(devprop_attr_val_t), 0);
-      devprop_res_val_t *irqpin = kmalloc(M_DEV, sizeof(devprop_res_val_t), 0);
-      devprop_res_val_t *irqline = kmalloc(M_DEV, sizeof(devprop_res_val_t), 0);
+      device_set_attr_number(dev, DA_PCI_CONF, PCIR_DEVICEID,
+                             pci_read_config(dev, PCIR_DEVICEID, 2));
+      device_set_attr_number(dev, DA_PCI_CONF, PCIR_VENDORID,
+                             pci_read_config(dev, PCIR_VENDORID, 2));
+      device_set_attr_number(dev, DA_PCI_CONF, PCIR_CLASSCODE,
+                             pci_read_config(dev, PCIR_CLASSCODE, 1));
 
-      deviceid->uint16_value = pci_read_config(dev, PCIR_DEVICEID, 2);
-      vendorid->uint16_value = pci_read_config(dev, PCIR_VENDORID, 2);
-      classcode->uint8_value = pci_read_config(dev, PCIR_CLASSCODE, 1);
-      irqpin->uint8_value = pci_read_config(dev, PCIR_IRQPIN, 1);
-      irqline->uint8_value = pci_read_config(dev, PCIR_IRQLINE, 1);
-
-      set_device_prop_attr(dev, DEVICEID, deviceid);
-      set_device_prop_attr(dev, VENDORID, vendorid);
-      set_device_prop_attr(dev, CLASSCODE, classcode);
-      set_device_prop_res(dev, IRQPIN, irqpin);
-      set_device_prop_res(dev, IRQLINE, irqline);
+      device_set_attr_number(dev, DA_IRQ, 0,
+                             pci_read_config(dev, PCIR_IRQLINE, 1));
 
       for (int i = 0; i < 6; i++) {
-        devprop_res_val_t *pcibar =
-          kmalloc(M_DEV, sizeof(devprop_res_val_t), 0);
         uint32_t addr = pci_read_config(dev, PCIR_BAR(i), 4);
         uint32_t size = pci_adjust_config(dev, PCIR_BAR(i), 4, 0xffffffff);
 
         if (size == 0 || addr == size)
           continue;
 
-        unsigned type, flags;
+        da_tag_t type;
 
         if (addr & PCI_BAR_IO) {
-          type = RT_IOPORTS;
-          flags = RF_NONE;
+          type = DA_IOPORT;
           size &= ~PCI_BAR_IO_MASK;
         } else {
-          type = RT_MEMORY;
-          flags = (addr & PCI_BAR_PREFETCHABLE) ? RF_PREFETCHABLE : RF_NONE;
+          type = DA_MEMORY;
           size &= ~PCI_BAR_MEMORY_MASK;
         }
 
-        size = -size;
-        pcibar->bar = &(pci_bar_t){
-          .owner = dev, .type = type, .flags = flags, .size = size, .rid = i};
-        set_device_prop_res(dev, PCIBAR, pcibar);
+        device_set_attr_range(dev, type, i, addr, -size);
       }
     }
   }
