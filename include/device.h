@@ -41,10 +41,8 @@ typedef enum {
   DA_IOPORT,
   DA_MEMORY,
   DA_IRQ,
-  /* PCI bus identifiers */
-  DA_PCI_CLASSCODE,
-  DA_PCI_DEVICEID,
-  DA_PCI_VENDORID,
+  /* bus specific information */
+  DA_PCI_CONF,
 } __packed da_tag_t;
 
 typedef short da_id_t;
@@ -87,6 +85,13 @@ int device_detach(device_t *dev);
 
 /*! \brief TODO */
 device_attr_t *device_get_attr(device_t *dev, da_tag_t tag, da_id_t id);
+
+#define device_set_attr_number(dev, tag, id, number)
+#define device_set_attr_range(dev, tag, id, start, size)                       \
+  (void)tag;                                                                   \
+  (void)id;                                                                    \
+  (void)start;                                                                 \
+  (void)size
 
 /* Manually create a device with given driver and parent device. */
 device_t *make_device(device_t *parent, driver_t *driver);
